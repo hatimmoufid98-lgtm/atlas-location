@@ -1,0 +1,23 @@
+# Environnement Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Secrets — NE JAMAIS committer
+.env
+
+# Fichiers générés
+staticfiles/
+db.sqlite3
+*.log
+
+# Système
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# NB : media/ (photos de démo) est volontairement GARDÉ dans le dépôt
+# pour que les images s'affichent en ligne.

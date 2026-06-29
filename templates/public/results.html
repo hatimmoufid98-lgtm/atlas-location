@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Voitures disponibles — {% if agency %}{{ agency.nom }}{% else %}Atlas Location{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
+
+  <!-- EN-TÊTE + FORMULAIRE DE RECHERCHE -->
+  <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+    <h1 class="text-xl font-bold text-gray-800 mb-4">Modifier la recherche</h1>
+    <form method="get" action="/recherche/" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase">Prise en charge</label>
+        <input type="date" name="date_debut" value="{{ date_debut }}" required
+               class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase">Retour</label>
+        <input type="date" name="date_fin" value="{{ date_fin }}" required
+               class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase">Catégorie</label>
+        <select name="categorie"
+                class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white">
+          <option value="">Toutes</option>
+          <option value="economique" {% if categorie == 'economique' %}selected{% endif %}>Économique</option>
+          <option value="normale" {% if categorie == 'normale' %}selected{% endif %}>Normale</option>
+          <option value="luxe" {% if categorie == 'luxe' %}selected{% endif %}>Luxe</option>
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button type="submit" class="btn-primary w-full py-2 text-sm">Rechercher</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ERREUR -->
+  {% if erreur %}
+  <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-6 py-4 mb-6">
+    ⚠️ {{ erreur }}
+  </div>
+  {% endif %}
+
+  <!-- RÉSULTATS -->
+  {% if date_debut and date_fin and not erreur %}
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">
+          {% if voitures %}{{ voitures|length }} voiture{% if voitures|length > 1 %}s{% endif %} disponible{% if voitures|length > 1 %}s{% endif %}
+          {% else %}Aucune voiture disponible{% endif %}
+        </h2>
+        <p class="text-gray-500 text-sm mt-1">
+          Du <strong>{{ date_debut }}</strong> au <strong>{{ date_fin }}</strong>
+          {% if categorie %} · Catégorie : <strong>{{ categorie|capfirst }}</strong>{% endif %}
+        </p>
+      </div>
+    </div>
+
+    {% if voitures %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for voiture in voitures %}
+      <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+        <div class="relative overflow-hidden bg-gray-100 h-48">
+          {% if voiture.photo %}
+            <img src="{{ voiture.photo.url }}" alt="{{ voiture.nom_complet }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          {% else %}
+            <div class="w-full h-full flex items-center justify-center text-gray-300">
+              <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                      d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                      d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 1h9zM13 16l2-5h4l2 4v1h-3"/>
+              </svg>
+            </div>
+          {% endif %}
+          <!-- Badge disponibilité -->
+          <span class="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+            ✓ Disponible
+          </span>
+          <span class="absolute top-3 left-3 text-xs font-semibold px-3 py-1 rounded-full
+            {% if voiture.categorie == 'luxe' %}bg-yellow-100 text-yellow-800
+            {% elif voiture.categorie == 'normale' %}bg-blue-100 text-blue-800
+            {% else %}bg-green-100 text-green-800{% endif %}">
+            {{ voiture.get_categorie_display }}
+          </span>
+        </div>
+
+        <div class="p-4">
+          <h3 class="font-bold text-gray-800 text-lg">{{ voiture.nom_complet }}</h3>
+          <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-1">
+            <span>{{ voiture.get_transmission_display }}</span>
+            <span>·</span>
+            <span>{{ voiture.get_carburant_display }}</span>
+            <span>·</span>
+            <span>{{ voiture.nombre_places }} places</span>
+          </div>
+
+          <div class="border-t border-gray-100 mt-4 pt-4 flex items-end justify-between">
+            <div>
+              <div class="text-xs text-gray-400">{{ voiture.duree }} jour{% if voiture.duree > 1 %}s{% endif %}</div>
+              <div>
+                <span class="text-primary font-extrabold text-2xl">{{ voiture.prix_total }} MAD</span>
+              </div>
+              <div class="text-xs text-gray-400">{{ voiture.prix_par_jour }} MAD/jour</div>
+            </div>
+            <a href="/reservation/voiture/{{ voiture.id }}/?date_debut={{ date_debut }}&date_fin={{ date_fin }}"
+               class="btn-primary text-sm py-2 px-5">
+              Réserver
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="text-center py-20">
+      <div class="text-6xl mb-4">😔</div>
+      <h3 class="text-xl font-bold text-gray-700 mb-2">Aucune voiture disponible sur ces dates</h3>
+      <p class="text-gray-500 mb-6">Essayez d'autres dates ou une autre catégorie.</p>
+      <a href="/" class="btn-primary">Nouvelle recherche</a>
+    </div>
+    {% endif %}
+
+  {% elif not date_debut and not date_fin %}
+  <div class="text-center py-16 text-gray-400">
+    <div class="text-5xl mb-4">🔍</div>
+    <p class="text-lg">Saisissez vos dates de location pour voir les véhicules disponibles.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

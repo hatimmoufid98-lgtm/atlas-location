@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Réservation confirmée — {% if agency %}{{ agency.nom }}{% else %}Atlas Location{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-16">
+
+  <!-- Icône succès -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
+      <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <h1 class="text-3xl font-extrabold text-gray-800">Réservation enregistrée !</h1>
+    <p class="text-gray-500 mt-2">Votre demande a bien été reçue. Référence : <strong>#{{ booking.id }}</strong></p>
+  </div>
+
+  <!-- Récapitulatif -->
+  <div class="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
+
+    <!-- En-tête voiture -->
+    <div class="bg-primary p-6 text-white">
+      <div class="text-sm opacity-80 mb-1">Véhicule réservé</div>
+      <div class="text-2xl font-bold">{{ booking.car.nom_complet }}</div>
+      <div class="text-sm opacity-80 mt-1">{{ booking.car.get_categorie_display }} · {{ booking.car.get_transmission_display }} · {{ booking.car.get_carburant_display }}</div>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <!-- Dates -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-50 rounded-xl p-4">
+          <div class="text-xs font-semibold text-gray-400 uppercase mb-1">Prise en charge</div>
+          <div class="font-bold text-gray-800 text-lg">{{ booking.date_debut }}</div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4">
+          <div class="text-xs font-semibold text-gray-400 uppercase mb-1">Retour</div>
+          <div class="font-bold text-gray-800 text-lg">{{ booking.date_fin }}</div>
+        </div>
+      </div>
+
+      <!-- Durée + Prix -->
+      <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+        <div class="text-gray-600">
+          Durée : <strong>{{ booking.nombre_jours }} jour{% if booking.nombre_jours > 1 %}s{% endif %}</strong>
+          × {{ booking.car.prix_par_jour }} MAD/jour
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-gray-400">Total estimé</div>
+          <div class="text-primary font-extrabold text-2xl">{{ booking.prix_total }} MAD</div>
+        </div>
+      </div>
+
+      <!-- Infos client -->
+      <div class="border-t border-gray-100 pt-4 space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Client</span>
+          <span class="font-semibold">{{ booking.nom_client }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Téléphone</span>
+          <span class="font-semibold">{{ booking.telephone_client }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Email</span>
+          <span class="font-semibold">{{ booking.email_client }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Statut</span>
+          <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">
+            {{ booking.get_statut_display }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message paiement -->
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+    <div class="flex gap-3">
+      <span class="text-2xl">💳</span>
+      <div>
+        <div class="font-semibold text-blue-800 mb-1">Paiement à la prise en charge</div>
+        <p class="text-blue-700 text-sm">
+          Aucun paiement n'est requis en ligne. Vous réglerez le montant total de
+          <strong>{{ booking.prix_total }} MAD</strong> directement à l'agence lors de la remise des clés.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact agence -->
+  {% if agency %}
+  <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-8">
+    <div class="font-semibold text-gray-700 mb-1">Une question ? Contactez-nous</div>
+    <p class="text-sm text-gray-600">
+      📞 <a href="tel:{{ agency.telephone }}" class="text-primary font-semibold">{{ agency.telephone }}</a>
+      — {{ agency.nom }}, {{ agency.ville }}
+    </p>
+  </div>
+  {% endif %}
+
+  <div class="text-center">
+    <a href="/" class="btn-primary">Retour à l'accueil</a>
+  </div>
+
+</div>
+{% endblock %}

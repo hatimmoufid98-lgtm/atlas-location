@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Planning annuel — Gestion{% endblock %}
+
+{% block extra_head %}
+<style>
+  .gantt-row { display: grid; grid-template-columns: 200px 1fr; align-items: stretch; }
+  .gantt-label { padding: 8px 12px; border-bottom: 1px solid #f1f1f1; background: #fff; }
+  .gantt-track {
+    position: relative; border-bottom: 1px solid #f1f1f1; height: 46px;
+    background-image: repeating-linear-gradient(
+      to right, #fafafa, #fafafa calc(100% / 12 - 1px),
+      #e9e9e9 calc(100% / 12 - 1px), #e9e9e9 calc(100% / 12)
+    );
+  }
+  .gantt-months { display: grid; grid-template-columns: repeat(12, 1fr); }
+  .gantt-month { text-align: center; font-size: 11px; font-weight: 600; color: #888; padding: 6px 0; border-left: 1px solid #eee; }
+  .gantt-bar {
+    position: absolute; top: 9px; height: 28px; border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.12); cursor: default; overflow: hidden;
+    transition: filter .15s; min-width: 3px;
+  }
+  .gantt-bar:hover { filter: brightness(1.08); z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .gantt-bloque { background-image: repeating-linear-gradient(45deg, #ef4444, #ef4444 6px, #dc2626 6px, #dc2626 12px); }
+  .gantt-today { position: absolute; top: 0; bottom: 0; width: 2px; background: #2563eb; z-index: 6; }
+  .gantt-today::after {
+    content: "Aujourd'hui"; position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    background: #2563eb; color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 4px; white-space: nowrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <!-- En-tête -->
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Planning annuel</h1>
+      <p class="text-gray-500 text-sm mt-1">Vue d'ensemble des locations sur 12 mois — {{ nb_voitures }} voitures</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <form method="get" class="flex items-center gap-2">
+        <label class="text-sm text-gray-600">Année :</label>
+        <select name="annee" onchange="this.form.submit()"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+          {% for a in annees %}
+            <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      <a href="/gestion/" class="btn-outline text-sm py-2 px-4">← Tableau de bord</a>
+    </div>
+  </div>
+
+  <!-- Légende -->
+  <div class="flex flex-wrap items-center gap-5 mb-4 text-sm text-gray-600">
+    <span class="flex items-center gap-2"><span class="inline-block w-4 h-4 rounded" style="background:#10b981"></span> Confirmée</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-4 h-4 rounded" style="background:#f59e0b"></span> En attente</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-4 h-4 rounded" style="background-image:repeating-linear-gradient(45deg,#ef4444,#ef4444 4px,#dc2626 4px,#dc2626 8px)"></span> Bloquée / Maintenance</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-1 h-4" style="background:#2563eb"></span> Aujourd'hui</span>
+  </div>
+
+  <!-- Gantt -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+    <div style="min-width: 920px;">
+
+      <!-- En-tête mois -->
+      <div class="gantt-row" style="border-bottom:2px solid #eee;">
+        <div class="gantt-label font-semibold text-gray-700 text-sm" style="border-bottom:none;">Voiture</div>
+        <div class="gantt-months">
+          {% for m in mois_courts %}
+            <div class="gantt-month">{{ m }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Lignes voitures -->
+      {% for p in planning %}
+      <div class="gantt-row">
+        <div class="gantt-label">
+          <div class="font-medium text-gray-800 text-sm truncate">{{ p.car.marque }} {{ p.car.modele }}</div>
+          <div class="text-xs text-gray-400">
+            Occ. <span class="font-semibold {% if p.taux_occupation >= 60 %}text-green-600{% elif p.taux_occupation >= 30 %}text-amber-600{% else %}text-gray-400{% endif %}">{{ p.taux_occupation }}%</span>
+            · {{ p.recettes|floatformat:0 }} MAD
+          </div>
+        </div>
+        <div class="gantt-track">
+          {% if today_pct is not None %}
+            <div class="gantt-today" style="left: {{ today_pct }}%;"></div>
+          {% endif %}
+          {% for seg in p.segments %}
+            <div class="gantt-bar {% if seg.cls == 'bloque' %}gantt-bloque{% endif %}"
+                 style="left: {{ seg.left }}%; width: {{ seg.width }}%; {% if seg.cls != 'bloque' %}background: {{ seg.couleur }};{% endif %}"
+                 title="{{ seg.tooltip }}"></div>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+        <div class="p-8 text-center text-gray-400">Aucune voiture.</div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  <p class="text-xs text-gray-400 mt-3">💡 Survolez une barre pour voir le client et les dates. Le taux d'occupation est calculé sur les jours écoulés de l'année.</p>
+
+</div>
+{% endblock %}

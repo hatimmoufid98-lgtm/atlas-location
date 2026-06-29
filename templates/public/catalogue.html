@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Nos voitures — {% if agency %}{{ agency.nom }}{% else %}Atlas Location{% endif %}{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cat-header { position: relative; overflow: hidden; background: var(--ink); }
+  .cat-aurora { position:absolute; width:55vw; height:55vw; top:-25%; right:-10%; background:radial-gradient(circle,var(--gold),transparent 60%); opacity:.22; filter:blur(40px); animation: auroraMove 18s ease-in-out infinite; pointer-events:none; }
+  .filter-pill { transition:.2s; }
+  .filter-pill:hover { transform: translateY(-1px); }
+  .car-card { transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; }
+  .car-card:hover { transform: translateY(-8px); box-shadow: 0 24px 50px -22px rgba(0,0,0,.35); }
+  .car-card:hover .car-img { transform: scale(1.08); }
+  .car-img { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- En-tête -->
+<section class="cat-header pt-28 pb-16">
+  <div class="cat-aurora"></div>
+  <div class="relative max-w-6xl mx-auto px-4">
+    <span class="hero-eyebrow" style="color:var(--gold)">Notre parc automobile</span>
+    <h1 class="font-display text-4xl md:text-5xl font-extrabold text-white mt-4">Nos voitures</h1>
+    <p class="text-white/70 mt-3 max-w-xl">Parcourez l'ensemble de nos véhicules. Cliquez sur une voiture pour voir le détail et réserver.</p>
+  </div>
+</section>
+
+<!-- Filtres -->
+<section class="bg-white border-b border-gray-100 sticky top-0 z-30" style="backdrop-filter:blur(8px);">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center gap-3">
+    {% with base="/voitures/" %}
+    <a href="{{ base }}" class="filter-pill px-4 py-2 rounded-full text-sm font-semibold {% if not categorie %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Toutes</a>
+    <a href="{{ base }}?categorie=economique" class="filter-pill px-4 py-2 rounded-full text-sm font-semibold {% if categorie == 'economique' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Économique</a>
+    <a href="{{ base }}?categorie=normale" class="filter-pill px-4 py-2 rounded-full text-sm font-semibold {% if categorie == 'normale' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Normale</a>
+    <a href="{{ base }}?categorie=luxe" class="filter-pill px-4 py-2 rounded-full text-sm font-semibold {% if categorie == 'luxe' %}bg-primary text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Luxe</a>
+    {% endwith %}
+    <span class="ml-auto text-sm text-gray-400">{{ voitures|length }} véhicule{{ voitures|length|pluralize }}</span>
+  </div>
+</section>
+
+<!-- Grille -->
+<section class="max-w-6xl mx-auto px-4 py-12">
+  {% if voitures %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for voiture in voitures %}
+    <a href="/reservation/voiture/{{ voiture.id }}/" class="car-card reveal block bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+      <div class="relative overflow-hidden bg-gray-100 h-52">
+        {% if voiture.photo %}
+          <img src="{{ voiture.photo.url }}" alt="{{ voiture.nom_complet }}" class="car-img w-full h-full object-cover" />
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-300">
+            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 1h9zM13 16l2-5h4l2 4v1h-3"/></svg>
+          </div>
+        {% endif %}
+        <span class="absolute top-3 left-3 text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-md
+          {% if voiture.categorie == 'luxe' %}bg-yellow-400/90 text-yellow-900
+          {% elif voiture.categorie == 'normale' %}bg-blue-400/90 text-white
+          {% else %}bg-green-400/90 text-green-900{% endif %}">
+          {{ voiture.get_categorie_display }}
+        </span>
+      </div>
+      <div class="p-5">
+        <h3 class="font-display font-bold text-gray-900 text-lg">{{ voiture.nom_complet }}</h3>
+        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-2">
+          <span class="bg-gray-100 px-2 py-1 rounded">{{ voiture.get_transmission_display }}</span>
+          <span class="bg-gray-100 px-2 py-1 rounded">{{ voiture.get_carburant_display }}</span>
+          <span class="bg-gray-100 px-2 py-1 rounded">{{ voiture.nombre_places }} places</span>
+        </div>
+        <div class="flex items-center justify-between mt-5">
+          <div>
+            <span class="text-primary font-display font-extrabold text-2xl">{{ voiture.prix_par_jour }}</span>
+            <span class="text-gray-400 text-sm">MAD/jour</span>
+          </div>
+          <span class="btn-outline text-sm py-2 px-5">Détails →</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-20">
+    <div class="text-6xl mb-4">🚗</div>
+    <h3 class="text-xl font-bold text-gray-700 mb-2">Aucune voiture dans cette catégorie</h3>
+    <a href="/voitures/" class="btn-primary mt-4">Voir toutes les voitures</a>
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">
+    🚗 Atlas Location — Administration
+  </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}
+<a href="/gestion/" style="background:#C8A96E;color:white;padding:6px 14px;border-radius:6px;font-weight:600;text-decoration:none;margin-left:20px;">
+  📊 Tableau de bord
+</a>
+{% endblock %}

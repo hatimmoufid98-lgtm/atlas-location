@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord — Gestion{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+
+  <!-- En-tête -->
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+      <p class="text-gray-500 text-sm mt-1">Gestion & comptabilité — {{ today|date:"d/m/Y" }}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <form method="get" class="flex items-center gap-2">
+        <label class="text-sm text-gray-600">Année :</label>
+        <select name="annee" onchange="this.form.submit()"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+          {% for a in annees %}
+            <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      <a href="/gestion/planning/?annee={{ annee }}" class="btn-primary text-sm py-2 px-4">📅 Planning annuel</a>
+      <a href="/admin/" class="btn-outline text-sm py-2 px-4">⚙️ Admin</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <div class="text-gray-500 text-xs uppercase tracking-wide">Recettes {{ annee }}</div>
+      <div class="text-2xl font-bold text-green-600 mt-1">{{ total_recettes|floatformat:0 }} <span class="text-sm font-normal">MAD</span></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <div class="text-gray-500 text-xs uppercase tracking-wide">Dépenses {{ annee }}</div>
+      <div class="text-2xl font-bold text-red-500 mt-1">{{ total_depenses|floatformat:0 }} <span class="text-sm font-normal">MAD</span></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <div class="text-gray-500 text-xs uppercase tracking-wide">Bénéfice net</div>
+      <div class="text-2xl font-bold mt-1 {% if benefice_net >= 0 %}text-green-700{% else %}text-red-600{% endif %}">
+        {{ benefice_net|floatformat:0 }} <span class="text-sm font-normal">MAD</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <div class="text-gray-500 text-xs uppercase tracking-wide">Réservations confirmées</div>
+      <div class="text-2xl font-bold text-gray-800 mt-1">{{ nb_reservations }}</div>
+      <div class="text-xs text-gray-400">{{ nb_voitures }} voitures au parc</div>
+    </div>
+  </div>
+
+  <!-- ALERTES -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+      🔔 Alertes
+      {% if nb_alertes %}
+        <span class="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">{{ nb_alertes }}</span>
+      {% endif %}
+    </h2>
+
+    {% if nb_alertes == 0 %}
+      <p class="text-green-600 text-sm">✓ Aucune alerte. Toutes les assurances, vignettes et révisions sont à jour.</p>
+    {% else %}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Assurances -->
+        <div>
+          <h3 class="font-semibold text-gray-700 mb-2 text-sm">🛡️ Assurances</h3>
+          {% if assurances_alertes %}
+            <ul class="space-y-2">
+              {% for a in assurances_alertes %}
+                <li class="text-sm border-l-4 {% if a.jours_restants < 0 %}border-red-500 bg-red-50{% else %}border-amber-400 bg-amber-50{% endif %} px-3 py-2 rounded-r">
+                  <div class="font-medium text-gray-800">{{ a.car }}</div>
+                  <div class="text-gray-500 text-xs">{{ a.compagnie }} — exp. {{ a.date_fin|date:"d/m/Y" }}</div>
+                  <div class="text-xs font-semibold {% if a.jours_restants < 0 %}text-red-600{% else %}text-amber-600{% endif %}">
+                    {% if a.jours_restants < 0 %}Expirée depuis {{ a.jours_restants|stringformat:"d"|cut:"-" }} j{% else %}Expire dans {{ a.jours_restants }} j{% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-xs text-gray-400">Aucune.</p>
+          {% endif %}
+        </div>
+
+        <!-- Vignettes -->
+        <div>
+          <h3 class="font-semibold text-gray-700 mb-2 text-sm">🎫 Vignettes</h3>
+          {% if vignettes_alertes %}
+            <ul class="space-y-2">
+              {% for v in vignettes_alertes %}
+                <li class="text-sm border-l-4 {% if v.jours_restants < 0 %}border-red-500 bg-red-50{% else %}border-amber-400 bg-amber-50{% endif %} px-3 py-2 rounded-r">
+                  <div class="font-medium text-gray-800">{{ v.car }}</div>
+                  <div class="text-gray-500 text-xs">Vignette {{ v.annee }} — exp. {{ v.date_expiration|date:"d/m/Y" }}</div>
+                  <div class="text-xs font-semibold {% if v.jours_restants < 0 %}text-red-600{% else %}text-amber-600{% endif %}">
+                    {% if v.jours_restants < 0 %}Expirée{% else %}Expire dans {{ v.jours_restants }} j{% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-xs text-gray-400">Aucune.</p>
+          {% endif %}
+        </div>
+
+        <!-- Révisions -->
+        <div>
+          <h3 class="font-semibold text-gray-700 mb-2 text-sm">🔧 Révisions à prévoir</h3>
+          {% if revisions_a_venir %}
+            <ul class="space-y-2">
+              {% for r in revisions_a_venir %}
+                <li class="text-sm border-l-4 border-blue-400 bg-blue-50 px-3 py-2 rounded-r">
+                  <div class="font-medium text-gray-800">{{ r.car }}</div>
+                  <div class="text-gray-500 text-xs">{{ r.get_type_revision_display }} — prévu {{ r.prochaine_revision_date|date:"d/m/Y" }}</div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-xs text-gray-400">Aucune.</p>
+          {% endif %}
+        </div>
+
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- BILAN MENSUEL -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-900">📊 Bilan mensuel {{ annee }}</h2>
+      <a href="{% url 'dashboard:export_bilan_excel' %}?annee={{ annee }}"
+         class="btn-primary text-sm py-2 px-4">⬇ Exporter le bilan (Excel)</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500 border-b">
+            <th class="py-2 pr-4 font-medium">Mois</th>
+            <th class="py-2 px-4 font-medium text-right">Recettes</th>
+            <th class="py-2 px-4 font-medium text-right">Dépenses</th>
+            <th class="py-2 pl-4 font-medium text-right">Bénéfice net</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in bilan_mensuel %}
+            <tr class="border-b border-gray-50 hover:bg-gray-50">
+              <td class="py-2 pr-4 text-gray-700">{{ ligne.mois }}</td>
+              <td class="py-2 px-4 text-right text-green-600">{{ ligne.recettes|floatformat:0 }}</td>
+              <td class="py-2 px-4 text-right text-red-500">{{ ligne.depenses|floatformat:0 }}</td>
+              <td class="py-2 pl-4 text-right font-semibold {% if ligne.benefice >= 0 %}text-green-700{% else %}text-red-600{% endif %}">
+                {{ ligne.benefice|floatformat:0 }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-gray-200 font-bold">
+            <td class="py-3 pr-4">TOTAL {{ annee }}</td>
+            <td class="py-3 px-4 text-right text-green-700">{{ total_recettes|floatformat:0 }} MAD</td>
+            <td class="py-3 px-4 text-right text-red-600">{{ total_depenses|floatformat:0 }} MAD</td>
+            <td class="py-3 pl-4 text-right {% if benefice_net >= 0 %}text-green-800{% else %}text-red-700{% endif %}">
+              {{ benefice_net|floatformat:0 }} MAD
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- REPARTITION DES CHARGES -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">💼 Dépenses agence par catégorie</h2>
+      {% if depenses_par_categorie %}
+        <ul class="space-y-2">
+          {% for d in depenses_par_categorie %}
+            <li class="flex items-center justify-between text-sm border-b border-gray-50 py-2">
+              <span class="text-gray-700">{{ d.categorie__icone }} {{ d.categorie__nom }}</span>
+              <span class="font-semibold text-gray-900">{{ d.total|floatformat:0 }} MAD</span>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t font-bold text-gray-900">
+          <span>Total charges agence</span>
+          <span>{{ total_depenses_agence|floatformat:0 }} MAD</span>
+        </div>
+      {% else %}
+        <p class="text-sm text-gray-400">Aucune dépense pour {{ annee }}.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h2 class="text-lg font-bold text-gray-900 mb-4">🚗 Charges véhicules</h2>
+      <ul class="space-y-2">
+        {% for c in charges_vehicules_detail %}
+          <li class="flex items-center justify-between text-sm border-b border-gray-50 py-2">
+            <span class="text-gray-700">{{ c.nom }}</span>
+            <span class="font-semibold text-gray-900">{{ c.total|floatformat:0 }} MAD</span>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="flex items-center justify-between mt-3 pt-3 border-t font-bold text-gray-900">
+        <span>Total charges véhicules</span>
+        <span>{{ total_charges_veh|floatformat:0 }} MAD</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
