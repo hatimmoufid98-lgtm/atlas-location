@@ -18,7 +18,12 @@ for _env in ('RENDER_EXTERNAL_HOSTNAME', 'RAILWAY_PUBLIC_DOMAIN'):
     if _h and _h not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_h)
 
-CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS if h not in ('localhost', '127.0.0.1')]
+CSRF_TRUSTED_ORIGINS = []
+for _h in ALLOWED_HOSTS:
+    if _h in ('localhost', '127.0.0.1'):
+        continue
+    # Hôte joker ".exemple.com" -> origine CSRF "https://*.exemple.com"
+    CSRF_TRUSTED_ORIGINS.append(f'https://*{_h}' if _h.startswith('.') else f'https://{_h}')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
