@@ -3,9 +3,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Charge .env depuis le dossier du projet (robuste quel que soit le dossier courant)
+load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-fallback-a-changer-en-prod')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
@@ -69,12 +70,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# En ligne : l'hébergeur fournit DATABASE_URL. En local : variables DB_*.
+# Choix de la base :
+#  1. DATABASE_URL fourni par l'hébergeur (Render/Railway) -> PostgreSQL géré
+#  2. DB_NAME défini en local (.env) -> PostgreSQL local
+#  3. sinon (ex. PythonAnywhere) -> SQLite, zéro configuration
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
     }
-else:
+elif os.environ.get('DB_NAME'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -83,6 +87,13 @@ else:
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
